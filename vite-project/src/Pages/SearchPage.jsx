@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import SearchBar from '../Components/Search/SearchBar';  // Import the SearchBar component
+import SearchBar from '../Components/Search/SearchBar'; // Import the SearchBar component
 
 const SearchPage = () => {
   const [filter, setFilter] = useState('');
@@ -11,8 +11,9 @@ const SearchPage = () => {
   const [savedLists, setSavedLists] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null); // State for full-screen mode
   const [loading, setLoading] = useState(false); // State for loading indicator
+  const [error, setError] = useState(null); // State for error handling
 
-  const navigate = useNavigate();  // Hook for navigation
+  const navigate = useNavigate(); // Hook for navigation
 
   useEffect(() => {
     // Load saved lists from localStorage on component mount
@@ -23,6 +24,7 @@ const SearchPage = () => {
   useEffect(() => {
     // Fetch images based on the filter or default images
     setLoading(true);
+    setError(null);
     if (filter) {
       fetchFilteredImages(filter);
     } else {
@@ -36,7 +38,7 @@ const SearchPage = () => {
 
     // Process filter to handle wildcards
     const normalizedFilter = filter.replace(/x/g, '\\d');
-    const regex = new RegExp(`^${normalizedFilter}$`, 'i');
+    const regex = new RegExp(`^${normalizedFilter}`, 'i');
 
     for (let i = 100; i < 600; i++) {
       const code = i.toString();
@@ -57,13 +59,14 @@ const SearchPage = () => {
       setFilteredImages(images);
     } catch (error) {
       console.error('Error fetching images:', error);
+      setError('Failed to fetch images. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const fetchDefaultImages = async () => {
-    const defaultCodes = ['200', '201', '404', '203', '303', '500', '204', '403' ]; // Example default codes
+    const defaultCodes = ['200', '201', '404', '203', '303', '500', '204', '403']; // Example default codes
     const imagePromises = defaultCodes.map(code =>
       axios.get(`https://http.dog/${code}.jpg`, { responseType: 'blob' })
     );
@@ -80,6 +83,7 @@ const SearchPage = () => {
       }
     } catch (error) {
       console.error('Error fetching default images:', error);
+      setError('Failed to fetch default images. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,7 +110,7 @@ const SearchPage = () => {
   };
 
   const handleNavigateToLists = () => {
-    navigate('/lists');  // Redirect to /lists
+    navigate('/lists'); // Redirect to /lists
   };
 
   const handleImageClick = (image) => {
@@ -118,41 +122,45 @@ const SearchPage = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       {/* Main Content */}
       <div className={`p-6 ${selectedImage ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}>
-        <h1 className="text-4xl font-bold mb-6 text-gray-800">Search Page</h1>
+        <h1 className="text-4xl font-bold mb-6 text-white text-center">CODE STATUS</h1>
 
         <SearchBar onSearch={setFilter} />
 
         {loading && (
           <div className="flex justify-center items-center h-96">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent border-solid rounded-full animate-spin"></div>
+            <div className="w-12 h-12 border-4 border-white border-t-transparent border-solid rounded-full animate-spin"></div>
           </div>
         )}
 
-        {!loading && (
-          <div className="flex flex-wrap gap-6 mb-6">
-           {(filter ? filteredImages : defaultImages).map((image) => (
-  <div
-    key={image.code}
-    className="flex-shrink-0 w-60 h-60 bg-white p-4 rounded-lg ml-10 shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer flex flex-col items-center"
-    onClick={() => handleImageClick(image)}
-  >
-    <img
-      src={image.link}
-      alt={`Response Code ${image.code}`}
-      className="w-full h-40 object-contain rounded-lg mb-2"
-    />
-    <p className="text-center text-gray-600 font-medium">Code: {image.code}</p>
-  </div>
-))}
-
-             
+        {error && (
+          <div className="flex justify-center items-center h-96 text-red-500">
+            {error}
           </div>
         )}
 
-        <div className="mb-6 flex items-center space-x-4">
+        {!loading && !error && (
+          <div className="flex flex-wrap gap-6 mb-6 justify-center">
+            {(filter ? filteredImages : defaultImages).map((image) => (
+              <div
+                key={image.code}
+                className="flex-shrink-0 w-60 h-72 bg-white p-4 rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer flex flex-col items-center"
+                onClick={() => handleImageClick(image)}
+              >
+                <img
+                  src={image.link}
+                  alt={`Response Code ${image.code}`}
+                  className="w-full h-40 object-contain rounded-lg mb-2"
+                />
+                <p className="text-center text-gray-800 font-medium">Code: {image.code}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mb-6 flex items-center space-x-4 justify-center">
           <input
             type="text"
             value={listName}
@@ -162,7 +170,7 @@ const SearchPage = () => {
           />
           <button
             onClick={handleSaveList}
-            className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-700 transition duration-200"
+            className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition duration-200"
           >
             Save List
           </button>
@@ -184,6 +192,8 @@ const SearchPage = () => {
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
           onClick={handleCloseFullScreen}
+          aria-label="Close full-screen image"
+          role="dialog"
         >
           <div className="relative">
             <img
@@ -194,6 +204,7 @@ const SearchPage = () => {
             <button
               onClick={handleCloseFullScreen}
               className="absolute top-4 right-4 bg-white text-black rounded-full p-3 shadow-md hover:bg-gray-200 transition duration-200"
+              aria-label="Close full-screen image"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
