@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import SearchBar from '../Components/Search/SearchBar'; // Import the SearchBar component
+import SearchBar from '../Components/Search/SearchBar';  
+import { AuthContext } from '../context/AuthContext';  
 
 const SearchPage = () => {
   const [filter, setFilter] = useState('');
@@ -9,20 +10,23 @@ const SearchPage = () => {
   const [defaultImages, setDefaultImages] = useState([]);
   const [listName, setListName] = useState('');
   const [savedLists, setSavedLists] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null); // State for full-screen mode
-  const [loading, setLoading] = useState(false); // State for loading indicator
-  const [error, setError] = useState(null); // State for error handling
+  const [selectedImage, setSelectedImage] = useState(null); //   full-screen mode
+  const [loading, setLoading] = useState(false);  
+  const [error, setError] = useState(null);  
 
-  const navigate = useNavigate(); // Hook for navigation
-
-  useEffect(() => {
-    // Load saved lists from localStorage on component mount
-    const storedLists = JSON.parse(localStorage.getItem('lists')) || [];
-    setSavedLists(storedLists);
-  }, []);
+  const { user } = useContext(AuthContext);  
+  const navigate = useNavigate();  
 
   useEffect(() => {
-    // Fetch images based on the filter or default images
+    if (user) {
+      // Load saved lists from localStorage 
+      const storedLists = JSON.parse(localStorage.getItem(`lists_${user.email}`)) || [];
+      setSavedLists(storedLists);
+    }
+  }, [user]);
+
+  useEffect(() => {
+     
     setLoading(true);
     setError(null);
     if (filter) {
@@ -36,7 +40,7 @@ const SearchPage = () => {
     const imagePromises = [];
     const codes = [];
 
-    // Process filter to handle wildcards
+    
     const normalizedFilter = filter.replace(/x/g, '\\d');
     const regex = new RegExp(`^${normalizedFilter}`, 'i');
 
@@ -45,17 +49,19 @@ const SearchPage = () => {
       if (regex.test(code)) {
         codes.push(code);
         imagePromises.push(
-          axios.get(`https://http.dog/${code}.jpg`, { responseType: 'blob' })
+          axios.get(`http://localhost:5000/api/images/${code}`, { responseType: 'blob' })  
+            .then(response => ({
+              code: code,
+              link: URL.createObjectURL(response.data)
+            }))
+            .catch(() => null) 
         );
       }
     }
 
     try {
       const responses = await Promise.all(imagePromises);
-      const images = responses.map((response, index) => ({
-        code: codes[index],
-        link: URL.createObjectURL(response.data)
-      }));
+      const images = responses.filter(response => response !== null);  
       setFilteredImages(images);
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -66,20 +72,22 @@ const SearchPage = () => {
   };
 
   const fetchDefaultImages = async () => {
-    const defaultCodes = ['200', '201', '404', '203', '303', '500', '204', '403']; // Example default codes
+    const defaultCodes = ['200', '201', '404', '203', '303', '500', '204', '403'];  
     const imagePromises = defaultCodes.map(code =>
-      axios.get(`https://http.dog/${code}.jpg`, { responseType: 'blob' })
+      axios.get(`http://localhost:5000/api/images/${code}`, { responseType: 'blob' })  
+        .then(response => ({
+          code: code,
+          link: URL.createObjectURL(response.data)
+        }))
+        .catch(() => null)  
     );
 
     try {
       const responses = await Promise.all(imagePromises);
-      const images = responses.map((response, index) => ({
-        code: defaultCodes[index],
-        link: URL.createObjectURL(response.data)
-      }));
+      const images = responses.filter(response => response !== null);  
       setDefaultImages(images);
       if (!filter) {
-        setFilteredImages(images); // Show default images if no filter
+        setFilteredImages(images);  
       }
     } catch (error) {
       console.error('Error fetching default images:', error);
@@ -90,35 +98,36 @@ const SearchPage = () => {
   };
 
   const handleSaveList = () => {
-    if (!listName) {
-      alert('Please enter a list name.');
+    if (!listName || !user) {
+      alert('Please enter a list name and ensure you are logged in.');
       return;
     }
 
     const list = {
       name: listName,
+      user: user.email,  
       createdAt: new Date().toLocaleDateString(),
       responseCodes: filteredImages.map(img => img.code),
       imageLinks: filteredImages.map(img => img.link)
     };
 
-    const storedLists = JSON.parse(localStorage.getItem('lists')) || [];
+    const storedLists = JSON.parse(localStorage.getItem(`lists_${user.email}`)) || [];
     storedLists.push(list);
-    localStorage.setItem('lists', JSON.stringify(storedLists));
+    localStorage.setItem(`lists_${user.email}`, JSON.stringify(storedLists));
     setSavedLists(storedLists);
     setListName('');
   };
 
   const handleNavigateToLists = () => {
-    navigate('/lists'); // Redirect to /lists
+    navigate('/lists');  
   };
 
   const handleImageClick = (image) => {
-    setSelectedImage(image); // Set the clicked image for full-screen mode
+    setSelectedImage(image);  
   };
 
   const handleCloseFullScreen = () => {
-    setSelectedImage(null); // Close full-screen mode
+    setSelectedImage(null);  
   };
 
   return (
@@ -146,13 +155,13 @@ const SearchPage = () => {
             {(filter ? filteredImages : defaultImages).map((image) => (
               <div
                 key={image.code}
-                className="flex-shrink-0 w-60 h-72 bg-white p-4 rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer flex flex-col items-center"
+                className="flex-shrink-0 w-60 h-72 bg-gray-300 p-4 rounded-lg shadow-lg hover:shadow-2xl transition-shadow duration-300 cursor-pointer flex flex-col items-center"
                 onClick={() => handleImageClick(image)}
               >
                 <img
                   src={image.link}
                   alt={`Response Code ${image.code}`}
-                  className="w-full h-40 object-contain rounded-lg mb-2"
+                  className="w-full h-30 object-contain rounded-lg mb-1 "
                 />
                 <p className="text-center text-gray-800 font-medium">Code: {image.code}</p>
               </div>
@@ -170,9 +179,9 @@ const SearchPage = () => {
           />
           <button
             onClick={handleSaveList}
-            className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition duration-200"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-900 transition duration-200"
           >
-            Save List
+            Save 
           </button>
         </div>
       </div>
@@ -187,7 +196,7 @@ const SearchPage = () => {
         </button>
       </div>
 
-      {/* Full-Screen Image Modal */}
+      {/* Full-Screen  Part */}
       {selectedImage && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"

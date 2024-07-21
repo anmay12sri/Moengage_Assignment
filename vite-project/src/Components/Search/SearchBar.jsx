@@ -1,5 +1,5 @@
 import   { useState } from 'react';
-import { FaSearch } from "react-icons/fa"; // Import the search icon from react-icons
+import { FaSearch } from "react-icons/fa";  
 
 function SearchBar({ onSearch }) {
   const [query, setQuery] = useState('');
@@ -7,7 +7,7 @@ function SearchBar({ onSearch }) {
   const handleChange = (e) => {
     const newQuery = e.target.value;
     setQuery(newQuery);
-    onSearch(newQuery); // Call onSearch on every key press
+    onSearch(newQuery);  
   };
 
   return (

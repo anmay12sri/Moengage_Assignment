@@ -1,43 +1,47 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import ListItem from '../Components/Lists/ListItem';
 import ListDetail from '../Components/Lists/ListDetail';
+import { AuthContext } from '../context/AuthContext';
 
 function ListsPage() {
+  const { user } = useContext(AuthContext);
   const [lists, setLists] = useState([]);
   const [selectedList, setSelectedList] = useState(null);
 
   useEffect(() => {
-    const savedLists = JSON.parse(localStorage.getItem('lists')) || [];
-    setLists(savedLists);
-  }, []);
+    if (user) {
+      const storedLists = JSON.parse(localStorage.getItem(`lists_${user.email}`)) || [];
+      setLists(storedLists);
+    }
+  }, [user]);
 
-  const handleSelectList = (id) => {
-    const list = lists.find((list) => list.name === id);
+  const handleSelectList = (name) => {
+    const list = lists.find((list) => list.name === name);
     setSelectedList(list);
   };
 
-  const handleDeleteList = (id) => {
-    const updatedLists = lists.filter((list) => list.name !== id);
+  const handleDeleteList = (name) => {
+    const updatedLists = lists.filter((list) => list.name !== name);
     setLists(updatedLists);
-    localStorage.setItem('lists', JSON.stringify(updatedLists));
-    if (selectedList && selectedList.name === id) {
-      setSelectedList(null); // Deselect the list if it is deleted
+    localStorage.setItem(`lists_${user.email}`, JSON.stringify(updatedLists));
+    if (selectedList && selectedList.name === name) {
+      setSelectedList(null);
     }
   };
 
   const handleEditList = () => {
-    // Implement list editing functionality
+    
   };
 
   const handleDeleteCode = (code) => {
     if (selectedList) {
-      const updatedCodes = selectedList.codes.filter((c) => c !== code);
+      const updatedCodes = selectedList.responseCodes.filter((c) => c !== code);
       const updatedImages = selectedList.imageLinks.filter(
-        (_, index) => selectedList.codes[index] !== code
+        (_, index) => selectedList.responseCodes[index] !== code
       );
       const updatedList = {
         ...selectedList,
-        codes: updatedCodes,
+        responseCodes: updatedCodes,
         imageLinks: updatedImages,
       };
       const updatedLists = lists.map((list) =>
@@ -45,14 +49,14 @@ function ListsPage() {
       );
       setLists(updatedLists);
       setSelectedList(updatedList);
-      localStorage.setItem('lists', JSON.stringify(updatedLists));
+      localStorage.setItem(`lists_${user.email}`, JSON.stringify(updatedLists));
     }
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-gradient-to-br from-purple-600 to-purple-900 min-h-screen">
       <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-1">
+        <div className="col-span-1 bg-white bg-opacity-80 p-4 rounded-lg shadow-lg">
           {lists.map((list) => (
             <ListItem
               key={list.name}
@@ -62,7 +66,7 @@ function ListsPage() {
             />
           ))}
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 bg-white bg-opacity-80 p-4 rounded-lg shadow-lg">
           {selectedList && (
             <ListDetail
               list={selectedList}

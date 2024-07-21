@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const LoginPage = () => {
@@ -10,11 +10,13 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    // Retrieve stored user data from localStorage
-    const storedUser = JSON.parse(localStorage.getItem('user'));
+    // Retrieve stored users from localStorage
+    const storedUsers = JSON.parse(localStorage.getItem('users')) || [];
+    
+    // Check if any stored user matches the entered credentials
+    const storedUser = storedUsers.find(user => user.email === email && user.password === password);
 
-    // Check if stored user data exists and matches the entered credentials
-    if (storedUser && storedUser.email === email && storedUser.password === password) {
+    if (storedUser) {
       setUser({ email }); // Set user state
       navigate('/search'); // Redirect to SearchPage upon successful login
     } else {
@@ -23,30 +25,51 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="p-6 bg-white rounded shadow-md">
-        <h1 className="text-2xl font-bold mb-4">Login</h1>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Email"
-          className="block w-full mb-2 px-3 py-2 border border-gray-300 rounded"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="block w-full mb-4 px-3 py-2 border border-gray-300 rounded"
-        />
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <button
-          onClick={handleLogin}
-          className="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Login
-        </button>
+    <div
+      className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-purple-900"
+      style={{ height: '100vh' }} // Ensure full viewport height
+    >
+      <div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage: 'url(https://images.freecreatives.com/wp-content/uploads/2016/04/Abstract-Website-Background.jpg)'}}></div>
+      <div
+        className="relative p-8 bg-white bg-opacity-80 max-w-sm mx-auto rounded-lg shadow-lg"
+        style={{ width: '400px' }} // Set desired width
+      >
+        <h1 className="text-2xl font-bold mb-4 text-center text-purple-700">Login</h1>
+        <div className="space-y-4">
+          <div>
+            <label className="block mb-1 text-purple-700 font-bold">Email:</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-purple-700 font-bold">Password:</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="block w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+          </div>
+          {error && <p className="text-red-500">{error}</p>}
+          <button
+            onClick={handleLogin}
+            className="w-full py-2 bg-purple-700 text-white rounded hover:bg-purple-800 transition duration-200"
+          >
+            Login
+          </button>
+          <Link
+            to="/signup"
+            className="block text-center font-bold text-purple-700 cursor-pointer hover:underline mt-4"
+          >
+            Dont have an account? Sign up here!
+          </Link>
+        </div>
       </div>
     </div>
   );
