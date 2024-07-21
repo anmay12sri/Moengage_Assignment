@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import SearchBar from '../Components/Search/SearchBar';  
-import { AuthContext } from '../context/AuthContext';  
+import SearchBar from '../Components/Search/SearchBar';
+import { AuthContext } from '../context/AuthContext';
 
 const SearchPage = () => {
   const [filter, setFilter] = useState('');
@@ -10,23 +10,21 @@ const SearchPage = () => {
   const [defaultImages, setDefaultImages] = useState([]);
   const [listName, setListName] = useState('');
   const [savedLists, setSavedLists] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null); //   full-screen mode
-  const [loading, setLoading] = useState(false);  
-  const [error, setError] = useState(null);  
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const { user } = useContext(AuthContext);  
-  const navigate = useNavigate();  
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      // Load saved lists from localStorage 
       const storedLists = JSON.parse(localStorage.getItem(`lists_${user.email}`)) || [];
       setSavedLists(storedLists);
     }
   }, [user]);
 
   useEffect(() => {
-     
     setLoading(true);
     setError(null);
     if (filter) {
@@ -40,7 +38,6 @@ const SearchPage = () => {
     const imagePromises = [];
     const codes = [];
 
-    
     const normalizedFilter = filter.replace(/x/g, '\\d');
     const regex = new RegExp(`^${normalizedFilter}`, 'i');
 
@@ -49,19 +46,20 @@ const SearchPage = () => {
       if (regex.test(code)) {
         codes.push(code);
         imagePromises.push(
-          axios.get(`http://localhost:5000/api/images/${code}`, { responseType: 'blob' })  
-            .then(response => ({
+          axios
+            .get(`http://localhost:5000/api/images/${code}`, { responseType: 'blob' })
+            .then((response) => ({
               code: code,
-              link: URL.createObjectURL(response.data)
+              link: URL.createObjectURL(response.data),
             }))
-            .catch(() => null) 
+            .catch(() => null)
         );
       }
     }
 
     try {
       const responses = await Promise.all(imagePromises);
-      const images = responses.filter(response => response !== null);  
+      const images = responses.filter((response) => response !== null);
       setFilteredImages(images);
     } catch (error) {
       console.error('Error fetching images:', error);
@@ -72,22 +70,23 @@ const SearchPage = () => {
   };
 
   const fetchDefaultImages = async () => {
-    const defaultCodes = ['200', '201', '404', '203', '303', '500', '204', '403'];  
-    const imagePromises = defaultCodes.map(code =>
-      axios.get(`http://localhost:5000/api/images/${code}`, { responseType: 'blob' })  
-        .then(response => ({
+    const defaultCodes = ['200', '201', '404', '203', '303', '500', '204', '403'];
+    const imagePromises = defaultCodes.map((code) =>
+      axios
+        .get(`http://localhost:5000/api/images/${code}`, { responseType: 'blob' })
+        .then((response) => ({
           code: code,
-          link: URL.createObjectURL(response.data)
+          link: URL.createObjectURL(response.data),
         }))
-        .catch(() => null)  
+        .catch(() => null)
     );
 
     try {
       const responses = await Promise.all(imagePromises);
-      const images = responses.filter(response => response !== null);  
+      const images = responses.filter((response) => response !== null);
       setDefaultImages(images);
       if (!filter) {
-        setFilteredImages(images);  
+        setFilteredImages(images);
       }
     } catch (error) {
       console.error('Error fetching default images:', error);
@@ -105,10 +104,10 @@ const SearchPage = () => {
 
     const list = {
       name: listName,
-      user: user.email,  
+      user: user.email,
       createdAt: new Date().toLocaleDateString(),
-      responseCodes: filteredImages.map(img => img.code),
-      imageLinks: filteredImages.map(img => img.link)
+      responseCodes: filteredImages.map((img) => img.code),
+      imageLinks: filteredImages.map((img) => img.link),
     };
 
     const storedLists = JSON.parse(localStorage.getItem(`lists_${user.email}`)) || [];
@@ -119,22 +118,30 @@ const SearchPage = () => {
   };
 
   const handleNavigateToLists = () => {
-    navigate('/lists');  
+    navigate('/lists');
   };
 
   const handleImageClick = (image) => {
-    setSelectedImage(image);  
+    setSelectedImage(image);
   };
 
   const handleCloseFullScreen = () => {
-    setSelectedImage(null);  
+    setSelectedImage(null);
   };
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
+       
+      {user && (
+        <div className="absolute top-6 right-1 p-4 text-black  font-bold bg-blue-200 cursor-pointer">
+          Welcome, {user.email}
+        </div>
+      )}
+
       {/* Main Content */}
       <div className={`p-6 ${selectedImage ? 'opacity-50' : 'opacity-100'} transition-opacity duration-300`}>
-        <h1 className="text-4xl font-bold mb-6 text-white text-center">CODE STATUS</h1>
+        <h1 className="text-4xl font-bold mb-6 text-white text-center cursor-pointer">CODE STATUS</h1>
+        <hr></hr>
 
         <SearchBar onSearch={setFilter} />
 
@@ -181,7 +188,7 @@ const SearchPage = () => {
             onClick={handleSaveList}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-900 transition duration-200"
           >
-            Save 
+            Save
           </button>
         </div>
       </div>
@@ -196,7 +203,7 @@ const SearchPage = () => {
         </button>
       </div>
 
-      {/* Full-Screen  Part */}
+      {/* Full-Screen Part */}
       {selectedImage && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
