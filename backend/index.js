@@ -18,5 +18,5 @@ app.get('/api/images/:code', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Proxy server running at http://localhost:${port}`);
+  console.log(`server running at http://localhost:${port}`);
 });
